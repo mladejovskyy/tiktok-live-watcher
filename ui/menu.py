@@ -165,13 +165,14 @@ def check_dependencies_flow() -> None:
 
     print()
     if streamlink_available and ffmpeg_available:
-        print("🎉 All required dependencies are installed!")
-        print("   Recording should work properly.")
+        print("🎉 All dependencies are installed!")
+        print("   Recording works + automatic video fixing")
+    elif streamlink_available and not ffmpeg_available:
+        print("✅ Recording will work!")
+        print("   But videos may have seeking/duration issues")
+        print("   Install ffmpeg for automatic video fixing")
     elif not streamlink_available:
         print("⚠️  Recording will NOT work - streamlink is missing")
         print("   Run setup.bat again or install manually")
-    elif not ffmpeg_available:
-        print("⚠️  Recording may fail - ffmpeg is missing")
-        print("   Install ffmpeg from https://ffmpeg.org/")
 
     input("\nPress Enter to continue...")

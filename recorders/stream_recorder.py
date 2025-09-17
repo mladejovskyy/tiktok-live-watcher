@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import glob
 from datetime import datetime
 from typing import Optional
 
@@ -155,6 +156,7 @@ class StreamRecorder:
     def stop_recording(self) -> None:
         """Stop active recording."""
         if self.active_process:
+            recorded_file = None
             try:
                 if self.active_process.poll() is None:
                     self.active_process.terminate()
@@ -165,6 +167,10 @@ class StreamRecorder:
                     if stderr and "error" in stderr.lower():
                         print(f"Recording error: {stderr.strip()}")
                     print("⏹️  Recording finished")
+
+                # Try to fix the recorded file if ffmpeg is available
+                self._fix_recorded_files()
+
             except subprocess.TimeoutExpired:
                 self.active_process.kill()
                 print("🔴 Force stopped recording")
@@ -194,6 +200,52 @@ class StreamRecorder:
         if self.active_process:
             return self.active_process.poll() is None
         return False
+
+    def _fix_recorded_files(self) -> None:
+        """Fix metadata and seekability of recorded files using ffmpeg if available."""
+        try:
+            # Check if ffmpeg is available
+            subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+
+            # Find the most recent .mp4 file in recordings directory
+            mp4_files = glob.glob(os.path.join(self.recordings_dir, "*.mp4"))
+            if not mp4_files:
+                return
+
+            # Get the most recently modified file
+            latest_file = max(mp4_files, key=os.path.getmtime)
+
+            # Create fixed filename
+            base_name = os.path.splitext(latest_file)[0]
+            fixed_file = f"{base_name}_fixed.mp4"
+
+            print("🔧 Fixing video metadata for better playback...")
+
+            # Use ffmpeg to fix the file
+            cmd = [
+                'ffmpeg', '-i', latest_file,
+                '-c', 'copy',  # Don't re-encode, just copy streams
+                '-movflags', '+faststart',  # Move metadata to beginning
+                '-avoid_negative_ts', 'make_zero',  # Fix timestamp issues
+                fixed_file,
+                '-y'  # Overwrite if exists
+            ]
+
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                # Replace original file with fixed version
+                os.replace(fixed_file, latest_file)
+                print("✅ Video fixed - now supports seeking and shows duration")
+            else:
+                print("⚠️  Could not fix video metadata")
+                if os.path.exists(fixed_file):
+                    os.remove(fixed_file)
+
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # ffmpeg not available, skip fixing
+            pass
+        except Exception as e:
+            print(f"Error fixing recorded file: {e}")
 
     def cleanup(self) -> None:
         """Clean up any active recordings."""
