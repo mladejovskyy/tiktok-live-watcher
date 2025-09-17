@@ -310,23 +310,32 @@ exit /b 1
 :check_ffmpeg
 
 echo.
+echo Debug: Reached ffmpeg check section
 echo Checking for ffmpeg...
+echo Debug: Testing ffmpeg command...
 ffmpeg -version >nul 2>&1
-if errorlevel 1 (
+echo Debug: ffmpeg test result: !errorlevel!
+if !errorlevel! neq 0 (
     echo ⚠️  ffmpeg not found!
     echo.
-    echo Downloading and installing ffmpeg automatically...
+    echo Note: streamlink can work without ffmpeg for basic functionality
+    echo Attempting to download and install ffmpeg automatically...
     echo Please wait, this may take a few minutes...
     echo.
 
+    echo Debug: Creating temp directory...
     REM Create temporary directory for download
-    set TEMP_DIR=%TEMP%\\ffmpeg_install
-    if exist "%TEMP_DIR%" rmdir /s /q "%TEMP_DIR%"
-    mkdir "%TEMP_DIR%"
-    cd /d "%TEMP_DIR%"
+    set TEMP_DIR=!TEMP!\\ffmpeg_install
+    echo Debug: Temp dir will be: !TEMP_DIR!
+    if exist "!TEMP_DIR!" rmdir /s /q "!TEMP_DIR!"
+    mkdir "!TEMP_DIR!"
+    cd /d "!TEMP_DIR!"
+    echo Debug: Changed to temp directory
 
     echo Downloading ffmpeg...
-    powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip' -OutFile 'ffmpeg.zip' -UserAgent 'Mozilla/5.0' } catch { exit 1 }"
+    echo Debug: Starting download...
+    powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip' -OutFile 'ffmpeg.zip' -UserAgent 'Mozilla/5.0'; Write-Host 'Download completed' } catch { Write-Host 'Download failed:' $_.Exception.Message; exit 1 }"
+    echo Debug: PowerShell download command finished
 
     if exist "ffmpeg.zip" (
         echo Download successful, extracting...
