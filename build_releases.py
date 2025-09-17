@@ -262,29 +262,32 @@ exit /b 1
 :install_streamlink
 echo.
 echo Installing streamlink...
+echo Debug: Using Python command: !PYTHON_CMD!
 
-REM Try different installation methods with detected Python
-%PYTHON_CMD% -m pip install streamlink >nul 2>&1
-if %errorlevel%==0 (
+echo Debug: Trying pip install streamlink...
+!PYTHON_CMD! -m pip install streamlink
+if !errorlevel!==0 (
     echo ✅ streamlink installed
     goto :check_ffmpeg
 )
 
-%PYTHON_CMD% -m pip install --user streamlink >nul 2>&1
-if %errorlevel%==0 (
+echo Debug: Method 1 failed, trying user install...
+!PYTHON_CMD! -m pip install --user streamlink
+if !errorlevel!==0 (
     echo ✅ streamlink installed (user directory)
     goto :check_ffmpeg
 )
 
-%PYTHON_CMD% -m pip install --break-system-packages streamlink >nul 2>&1
-if %errorlevel%==0 (
+echo Debug: Method 2 failed, trying system override...
+!PYTHON_CMD! -m pip install --break-system-packages streamlink
+if !errorlevel!==0 (
     echo ✅ streamlink installed (system override)
     goto :check_ffmpeg
 )
 
-REM Try pipx if available
-pipx install streamlink >nul 2>&1
-if %errorlevel%==0 (
+echo Debug: Method 3 failed, trying pipx...
+pipx install streamlink
+if !errorlevel!==0 (
     echo ✅ streamlink installed (via pipx)
     goto :check_ffmpeg
 )
