@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from datetime import datetime
 from typing import Optional
@@ -9,7 +10,17 @@ class StreamRecorder:
 
     def __init__(self):
         self.active_process: Optional[subprocess.Popen] = None
-        self.recordings_dir = "Recordings"
+
+        # Get the directory where the executable is located
+        if getattr(sys, 'frozen', False):
+            # Running as PyInstaller executable
+            app_dir = os.path.dirname(sys.executable)
+        else:
+            # Running as Python script
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+            app_dir = os.path.dirname(app_dir)  # Go up one level from recorders/
+
+        self.recordings_dir = os.path.join(app_dir, "Recordings")
         os.makedirs(self.recordings_dir, exist_ok=True)
 
     def check_dependencies(self) -> tuple[bool, bool, bool]:

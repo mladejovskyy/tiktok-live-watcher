@@ -58,3 +58,9 @@ Recordings/
 
 # Claude Code
 .claude/
+
+# PyInstaller
+build/
+dist/
+*.spec
+releases/
