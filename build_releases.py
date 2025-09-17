@@ -175,31 +175,37 @@ For help: https://github.com/mladejovskyy/tiktok-live-watcher/issues
 def create_windows_setup(package_dir):
     """Create Windows setup script"""
     setup_script = """@echo off
+setlocal enabledelayedexpansion
 echo ========================================
 echo TikTok Live Watcher - Windows Setup
 echo ========================================
+echo.
+echo Debug: Script started
 echo.
 
 echo Checking Python installation...
 
 REM Try different Python commands
 set PYTHON_CMD=
+echo Debug: Trying python command...
 python --version >nul 2>&1
-if %errorlevel%==0 (
+if !errorlevel!==0 (
     set PYTHON_CMD=python
     echo ✅ Python found: python
     goto :install_streamlink
 )
 
+echo Debug: Trying py command...
 py --version >nul 2>&1
-if %errorlevel%==0 (
+if !errorlevel!==0 (
     set PYTHON_CMD=py
     echo ✅ Python found: py
     goto :install_streamlink
 )
 
+echo Debug: Trying python3 command...
 python3 --version >nul 2>&1
-if %errorlevel%==0 (
+if !errorlevel!==0 (
     set PYTHON_CMD=python3
     echo ✅ Python found: python3
     goto :install_streamlink
@@ -211,29 +217,35 @@ echo Downloading and installing Python automatically...
 echo Please wait, this may take a few minutes...
 echo.
 
+echo Debug: Attempting to download Python...
 REM Try to download Python installer
-powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile 'python-installer.exe'"
+powershell -Command "try { Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile 'python-installer.exe' -UserAgent 'Mozilla/5.0' } catch { Write-Host 'Download failed'; exit 1 }"
 if exist "python-installer.exe" (
-    echo Installing Python...
+    echo Debug: Python installer downloaded, installing...
     python-installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
+    timeout /t 30 /nobreak >nul
     del python-installer.exe
     echo.
     echo Python installation complete. Checking again...
 
     REM Check again after installation
+    echo Debug: Checking python after install...
     python --version >nul 2>&1
-    if %errorlevel%==0 (
+    if !errorlevel!==0 (
         set PYTHON_CMD=python
         echo ✅ Python now available
         goto :install_streamlink
     )
 
+    echo Debug: Checking py after install...
     py --version >nul 2>&1
-    if %errorlevel%==0 (
+    if !errorlevel!==0 (
         set PYTHON_CMD=py
         echo ✅ Python now available
         goto :install_streamlink
     )
+) else (
+    echo Debug: Python installer download failed
 )
 
 echo ❌ Failed to install Python automatically
@@ -395,6 +407,12 @@ echo All dependencies installed successfully!
 echo You can now run TikTok-Live-Watcher.exe
 echo.
 echo Press Enter to continue...
+pause
+
+REM This should never be reached, but just in case
+echo.
+echo Debug: Script reached end unexpectedly
+echo Press Enter to close...
 pause
 """
 
