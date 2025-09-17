@@ -181,41 +181,103 @@ echo ========================================
 echo.
 
 echo Checking Python installation...
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo ❌ Python not found!
-    echo.
-    echo Please install Python from: https://python.org/downloads/
-    echo Make sure to check "Add Python to PATH" during installation
-    echo.
-    pause
-    exit /b 1
-)
-echo ✅ Python found
 
+REM Try different Python commands
+set PYTHON_CMD=
+python --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON_CMD=python
+    echo ✅ Python found: python
+    goto :install_streamlink
+)
+
+py --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON_CMD=py
+    echo ✅ Python found: py
+    goto :install_streamlink
+)
+
+python3 --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON_CMD=python3
+    echo ✅ Python found: python3
+    goto :install_streamlink
+)
+
+echo ❌ Python not found!
+echo.
+echo Downloading and installing Python automatically...
+echo Please wait, this may take a few minutes...
+echo.
+
+REM Try to download Python installer
+powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile 'python-installer.exe'"
+if exist "python-installer.exe" (
+    echo Installing Python...
+    python-installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
+    del python-installer.exe
+    echo.
+    echo Python installation complete. Checking again...
+
+    REM Check again after installation
+    python --version >nul 2>&1
+    if %errorlevel%==0 (
+        set PYTHON_CMD=python
+        echo ✅ Python now available
+        goto :install_streamlink
+    )
+
+    py --version >nul 2>&1
+    if %errorlevel%==0 (
+        set PYTHON_CMD=py
+        echo ✅ Python now available
+        goto :install_streamlink
+    )
+)
+
+echo ❌ Failed to install Python automatically
+echo.
+echo Please install Python manually from: https://python.org/downloads/
+echo Make sure to check "Add Python to PATH" during installation
+echo Then run this setup script again.
+echo.
+echo ❌ Setup Failed!
+echo Press any key to close...
+pause >nul
+exit /b 1
+
+:install_streamlink
 echo.
 echo Installing streamlink...
 
-REM Try different installation methods
-pip install streamlink >nul 2>&1
+REM Try different installation methods with detected Python
+%PYTHON_CMD% -m pip install streamlink >nul 2>&1
 if %errorlevel%==0 (
     echo ✅ streamlink installed
     goto :check_ffmpeg
 )
 
-pip install --user streamlink >nul 2>&1
+%PYTHON_CMD% -m pip install --user streamlink >nul 2>&1
 if %errorlevel%==0 (
     echo ✅ streamlink installed (user directory)
     goto :check_ffmpeg
 )
 
+%PYTHON_CMD% -m pip install --break-system-packages streamlink >nul 2>&1
+if %errorlevel%==0 (
+    echo ✅ streamlink installed (system override)
+    goto :check_ffmpeg
+)
+
+REM Try pipx if available
 pipx install streamlink >nul 2>&1
 if %errorlevel%==0 (
     echo ✅ streamlink installed (via pipx)
     goto :check_ffmpeg
 )
 
-echo ⚠️  Automatic streamlink installation failed
+echo ❌ Automatic streamlink installation failed
 echo.
 echo Please install streamlink manually using one of these methods:
 echo   Method 1 (pipx): pipx install streamlink
@@ -225,6 +287,10 @@ echo   Method 4 (chocolatey): choco install streamlink
 echo.
 echo After installing streamlink, you can run TikTok-Live-Watcher.exe
 echo.
+echo ❌ Setup Failed!
+echo Press any key to close...
+pause >nul
+exit /b 1
 
 :check_ffmpeg
 
@@ -242,7 +308,11 @@ if errorlevel 1 (
     echo Alternative: Use chocolatey (if installed):
     echo   choco install ffmpeg
     echo.
-    pause
+    echo ⚠️  Setup completed with warnings!
+    echo Recording may not work without ffmpeg.
+    echo Press any key to close...
+    pause >nul
+    exit /b 0
 ) else (
     echo ✅ ffmpeg found
 )
@@ -252,9 +322,11 @@ echo ========================================
 echo ✅ Setup Complete!
 echo ========================================
 echo.
+echo All dependencies installed successfully!
 echo You can now run TikTok-Live-Watcher.exe
 echo.
-pause
+echo Press any key to close...
+pause >nul
 """
 
     with open(package_dir / "setup.bat", "w", encoding="utf-8") as f:
