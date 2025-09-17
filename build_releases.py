@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Release builder for TikTok Live Watcher
 Creates ready-to-run executables for Windows and macOS users
@@ -11,6 +12,12 @@ import sys
 import platform
 import zipfile
 from pathlib import Path
+
+# Fix encoding issues on Windows
+if platform.system() == "Windows":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 def run_command(cmd, cwd=None):
     """Run a command and return success status"""
