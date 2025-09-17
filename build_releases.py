@@ -300,19 +300,59 @@ ffmpeg -version >nul 2>&1
 if errorlevel 1 (
     echo ⚠️  ffmpeg not found!
     echo.
-    echo Please install ffmpeg:
-    echo 1. Download from: https://ffmpeg.org/download.html#build-windows
-    echo 2. Extract to C:\\ffmpeg\\
-    echo 3. Add C:\\ffmpeg\\bin to your PATH environment variable
+    echo Downloading and installing ffmpeg automatically...
+    echo Please wait, this may take a few minutes...
     echo.
-    echo Alternative: Use chocolatey (if installed):
-    echo   choco install ffmpeg
-    echo.
-    echo ⚠️  Setup completed with warnings!
-    echo Recording may not work without ffmpeg.
-    echo Press any key to close...
-    pause >nul
-    exit /b 0
+
+    REM Create ffmpeg directory
+    if not exist "C:\\ffmpeg" mkdir "C:\\ffmpeg"
+    cd /d "C:\\ffmpeg"
+
+    REM Download ffmpeg
+    powershell -Command "Invoke-WebRequest -Uri 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -OutFile 'ffmpeg.zip'"
+
+    if exist "ffmpeg.zip" (
+        echo Extracting ffmpeg...
+        powershell -Command "Expand-Archive -Path 'ffmpeg.zip' -DestinationPath '.' -Force"
+
+        REM Find the extracted folder and move contents
+        for /d %%i in (ffmpeg-*) do (
+            move "%%i\\bin\\*" "C:\\ffmpeg\\bin\\" >nul 2>&1
+            move "%%i\\*" "C:\\ffmpeg\\" >nul 2>&1
+            rmdir /s /q "%%i" >nul 2>&1
+        )
+
+        del "ffmpeg.zip"
+
+        REM Add to PATH for current session
+        set PATH=%PATH%;C:\\ffmpeg\\bin
+
+        REM Add to system PATH permanently
+        powershell -Command "[Environment]::SetEnvironmentVariable('PATH', [Environment]::GetEnvironmentVariable('PATH', 'User') + ';C:\\ffmpeg\\bin', 'User')"
+
+        echo ✅ ffmpeg installed successfully
+
+        REM Test if ffmpeg works now
+        C:\\ffmpeg\\bin\\ffmpeg.exe -version >nul 2>&1
+        if %errorlevel%==0 (
+            echo ✅ ffmpeg is working correctly
+        ) else (
+            echo ⚠️  ffmpeg installed but may need system restart
+        )
+    ) else (
+        echo ❌ Failed to download ffmpeg
+        echo.
+        echo Please install ffmpeg manually:
+        echo 1. Download from: https://ffmpeg.org/download.html#build-windows
+        echo 2. Extract to C:\\ffmpeg\\
+        echo 3. Add C:\\ffmpeg\\bin to your PATH
+        echo.
+        echo ⚠️  Setup completed with warnings!
+        echo Recording may not work without ffmpeg.
+        echo Press any key to close...
+        pause >nul
+        exit /b 0
+    )
 ) else (
     echo ✅ ffmpeg found
 )
