@@ -18,7 +18,7 @@ from checkers.tiktok_checker import TikTokLiveChecker
 from recorders.stream_recorder import StreamRecorder
 from ui.menu import (
     display_menu, get_user_choice, add_username_flow,
-    remove_username_flow, select_username_flow, toggle_recording_flow
+    remove_username_flow, select_username_flow, toggle_recording_flow, check_dependencies_flow
 )
 
 
@@ -113,7 +113,7 @@ class TikTokLiveWatcher:
         try:
             while True:
                 display_menu(self.username_manager, self.settings_manager)
-                choice = get_user_choice(4)
+                choice = get_user_choice(5)
 
                 if choice == 0:
                     print("Goodbye!")
@@ -128,6 +128,8 @@ class TikTokLiveWatcher:
                         await self.monitor_user(selected_username)
                 elif choice == 4:
                     toggle_recording_flow(self.settings_manager)
+                elif choice == 5:
+                    check_dependencies_flow()
 
         except KeyboardInterrupt:
             print("\nExiting...")

@@ -2,6 +2,7 @@ from typing import Optional
 
 from managers.username_manager import UsernameManager
 from managers.settings_manager import SettingsManager
+from recorders.stream_recorder import StreamRecorder
 
 
 def display_menu(username_manager: UsernameManager, settings_manager: SettingsManager) -> None:
@@ -20,6 +21,7 @@ def display_menu(username_manager: UsernameManager, settings_manager: SettingsMa
         status_text = "\033[31m\033[1mFalse\033[0m"  # Red bold
 
     print(f"4) Record stream – {status_text}")
+    print("5) Check dependencies")
     print("\n0) Exit")
 
 
@@ -130,3 +132,46 @@ def toggle_recording_flow(settings_manager: SettingsManager) -> None:
     new_value = settings_manager.toggle_recording()
     status = "enabled" if new_value else "disabled"
     print(f"Recording {status}")
+
+
+def check_dependencies_flow() -> None:
+    """Check and display dependency status."""
+    print("\n🔍 Checking Dependencies")
+    print("=" * 25)
+
+    recorder = StreamRecorder()
+    streamlink_available, ytdlp_available, ffmpeg_available = recorder.check_dependencies()
+
+    # Check streamlink
+    if streamlink_available:
+        print("✅ streamlink: Available")
+    else:
+        print("❌ streamlink: Not found")
+        print("   Install with: pip install streamlink")
+
+    # Check yt-dlp
+    if ytdlp_available:
+        print("✅ yt-dlp: Available")
+    else:
+        print("⚠️  yt-dlp: Not found (optional fallback)")
+        print("   Install with: pip install yt-dlp")
+
+    # Check ffmpeg
+    if ffmpeg_available:
+        print("✅ ffmpeg: Available")
+    else:
+        print("❌ ffmpeg: Not found")
+        print("   Download from: https://ffmpeg.org/")
+
+    print()
+    if streamlink_available and ffmpeg_available:
+        print("🎉 All required dependencies are installed!")
+        print("   Recording should work properly.")
+    elif not streamlink_available:
+        print("⚠️  Recording will NOT work - streamlink is missing")
+        print("   Run setup.bat again or install manually")
+    elif not ffmpeg_available:
+        print("⚠️  Recording may fail - ffmpeg is missing")
+        print("   Install ffmpeg from https://ffmpeg.org/")
+
+    input("\nPress Enter to continue...")
