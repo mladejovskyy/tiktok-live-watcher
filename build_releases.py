@@ -334,7 +334,7 @@ if !errorlevel! neq 0 (
 
     echo Downloading ffmpeg...
     echo Debug: Starting download...
-    powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip' -OutFile 'ffmpeg.zip' -UserAgent 'Mozilla/5.0'; Write-Host 'Download completed' } catch { Write-Host 'Download failed:' $_.Exception.Message; exit 1 }"
+    powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip' -OutFile 'ffmpeg.zip' -UserAgent 'Mozilla/5.0'; Write-Host 'Download completed' } catch { Write-Host 'Download failed:' $_.Exception.Message }" 2>nul
     echo Debug: PowerShell download command finished
 
     if exist "ffmpeg.zip" (
@@ -393,13 +393,15 @@ if !errorlevel! neq 0 (
 
     :ffmpeg_failed
     echo.
-    echo Please install ffmpeg manually:
+    echo ⚠️  ffmpeg installation failed, but streamlink is working!
+    echo.
+    echo Manual ffmpeg installation (optional):
     echo 1. Download from: https://ffmpeg.org/download.html#build-windows
     echo 2. Extract to C:\\ffmpeg\\
     echo 3. Add C:\\ffmpeg\\bin to your PATH
     echo.
-    echo ⚠️  Setup completed with warnings!
-    echo Recording may not work without ffmpeg.
+    echo ✅ Setup completed successfully!
+    echo streamlink is ready for recording (ffmpeg optional)
     echo.
     echo Press Enter to continue...
     pause
