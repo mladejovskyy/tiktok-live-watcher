@@ -161,7 +161,7 @@ All files are created in the same folder as the executable:
 For help: https://github.com/mladejovskyy/tiktok-live-watcher/issues
 """
 
-    with open(package_dir / "README.txt", "w") as f:
+    with open(package_dir / "README.txt", "w", encoding="utf-8") as f:
         f.write(readme_content)
 
     # Create setup scripts
@@ -257,7 +257,7 @@ echo.
 pause
 """
 
-    with open(package_dir / "setup.bat", "w") as f:
+    with open(package_dir / "setup.bat", "w", encoding="utf-8") as f:
         f.write(setup_script)
 
 def create_unix_setup(package_dir, platform_name):
@@ -344,7 +344,7 @@ echo
 """
 
     script_path = package_dir / "setup.sh"
-    with open(script_path, "w") as f:
+    with open(script_path, "w", encoding="utf-8") as f:
         f.write(setup_script)
 
     # Make script executable
