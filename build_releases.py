@@ -243,8 +243,8 @@ echo Make sure to check "Add Python to PATH" during installation
 echo Then run this setup script again.
 echo.
 echo ❌ Setup Failed!
-echo Press any key to close...
-pause >nul
+echo Press Enter to continue...
+pause
 exit /b 1
 
 :install_streamlink
@@ -288,8 +288,8 @@ echo.
 echo After installing streamlink, you can run TikTok-Live-Watcher.exe
 echo.
 echo ❌ Setup Failed!
-echo Press any key to close...
-pause >nul
+echo Press Enter to continue...
+pause
 exit /b 1
 
 :check_ffmpeg
@@ -304,55 +304,84 @@ if errorlevel 1 (
     echo Please wait, this may take a few minutes...
     echo.
 
-    REM Create ffmpeg directory
-    if not exist "C:\\ffmpeg" mkdir "C:\\ffmpeg"
-    cd /d "C:\\ffmpeg"
+    REM Create temporary directory for download
+    set TEMP_DIR=%TEMP%\\ffmpeg_install
+    if exist "%TEMP_DIR%" rmdir /s /q "%TEMP_DIR%"
+    mkdir "%TEMP_DIR%"
+    cd /d "%TEMP_DIR%"
 
-    REM Download ffmpeg
-    powershell -Command "Invoke-WebRequest -Uri 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -OutFile 'ffmpeg.zip'"
+    echo Downloading ffmpeg...
+    powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip' -OutFile 'ffmpeg.zip' -UserAgent 'Mozilla/5.0' } catch { exit 1 }"
 
     if exist "ffmpeg.zip" (
-        echo Extracting ffmpeg...
-        powershell -Command "Expand-Archive -Path 'ffmpeg.zip' -DestinationPath '.' -Force"
+        echo Download successful, extracting...
+        powershell -Command "try { Expand-Archive -Path 'ffmpeg.zip' -DestinationPath '.' -Force } catch { exit 1 }"
 
-        REM Find the extracted folder and move contents
+        REM Create ffmpeg directory
+        if not exist "C:\\ffmpeg" mkdir "C:\\ffmpeg"
+        if not exist "C:\\ffmpeg\\bin" mkdir "C:\\ffmpeg\\bin"
+
+        REM Find extracted folder and copy files
         for /d %%i in (ffmpeg-*) do (
-            move "%%i\\bin\\*" "C:\\ffmpeg\\bin\\" >nul 2>&1
-            move "%%i\\*" "C:\\ffmpeg\\" >nul 2>&1
-            rmdir /s /q "%%i" >nul 2>&1
+            echo Copying ffmpeg files...
+            copy "%%i\\bin\\ffmpeg.exe" "C:\\ffmpeg\\bin\\" >nul 2>&1
+            copy "%%i\\bin\\ffprobe.exe" "C:\\ffmpeg\\bin\\" >nul 2>&1
+            copy "%%i\\bin\\ffplay.exe" "C:\\ffmpeg\\bin\\" >nul 2>&1
         )
 
-        del "ffmpeg.zip"
+        REM Clean up temp files
+        cd /d "%~dp0"
+        rmdir /s /q "%TEMP_DIR%" >nul 2>&1
 
-        REM Add to PATH for current session
-        set PATH=%PATH%;C:\\ffmpeg\\bin
+        REM Test if ffmpeg was copied successfully
+        if exist "C:\\ffmpeg\\bin\\ffmpeg.exe" (
+            echo ✅ ffmpeg files copied successfully
 
-        REM Add to system PATH permanently
-        powershell -Command "[Environment]::SetEnvironmentVariable('PATH', [Environment]::GetEnvironmentVariable('PATH', 'User') + ';C:\\ffmpeg\\bin', 'User')"
+            REM Add to system PATH permanently
+            echo Adding ffmpeg to PATH...
+            for /f "tokens=2*" %%A in ('reg query "HKCU\\Environment" /v PATH 2^>nul') do set "CURRENT_PATH=%%B"
+            if not defined CURRENT_PATH set "CURRENT_PATH="
+            echo %CURRENT_PATH% | find /i "C:\\ffmpeg\\bin" >nul
+            if errorlevel 1 (
+                reg add "HKCU\\Environment" /v PATH /d "%CURRENT_PATH%;C:\\ffmpeg\\bin" /f >nul 2>&1
+                echo ✅ Added ffmpeg to PATH
+            ) else (
+                echo ✅ ffmpeg already in PATH
+            )
 
-        echo ✅ ffmpeg installed successfully
-
-        REM Test if ffmpeg works now
-        C:\\ffmpeg\\bin\\ffmpeg.exe -version >nul 2>&1
-        if %errorlevel%==0 (
-            echo ✅ ffmpeg is working correctly
+            REM Test if ffmpeg works
+            "C:\\ffmpeg\\bin\\ffmpeg.exe" -version >nul 2>&1
+            if %errorlevel%==0 (
+                echo ✅ ffmpeg is working correctly
+            ) else (
+                echo ⚠️  ffmpeg installed but may need to restart for PATH changes
+            )
         ) else (
-            echo ⚠️  ffmpeg installed but may need system restart
+            echo ❌ Failed to copy ffmpeg files
+            goto :ffmpeg_failed
         )
     ) else (
         echo ❌ Failed to download ffmpeg
-        echo.
-        echo Please install ffmpeg manually:
-        echo 1. Download from: https://ffmpeg.org/download.html#build-windows
-        echo 2. Extract to C:\\ffmpeg\\
-        echo 3. Add C:\\ffmpeg\\bin to your PATH
-        echo.
-        echo ⚠️  Setup completed with warnings!
-        echo Recording may not work without ffmpeg.
-        echo Press any key to close...
-        pause >nul
-        exit /b 0
+        goto :ffmpeg_failed
     )
+
+    goto :ffmpeg_done
+
+    :ffmpeg_failed
+    echo.
+    echo Please install ffmpeg manually:
+    echo 1. Download from: https://ffmpeg.org/download.html#build-windows
+    echo 2. Extract to C:\\ffmpeg\\
+    echo 3. Add C:\\ffmpeg\\bin to your PATH
+    echo.
+    echo ⚠️  Setup completed with warnings!
+    echo Recording may not work without ffmpeg.
+    echo.
+    echo Press Enter to continue...
+    pause
+    exit /b 0
+
+    :ffmpeg_done
 ) else (
     echo ✅ ffmpeg found
 )
@@ -365,8 +394,8 @@ echo.
 echo All dependencies installed successfully!
 echo You can now run TikTok-Live-Watcher.exe
 echo.
-echo Press any key to close...
-pause >nul
+echo Press Enter to continue...
+pause
 """
 
     with open(package_dir / "setup.bat", "w", encoding="utf-8") as f:
