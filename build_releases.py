@@ -43,25 +43,46 @@ def prepare_ffmpeg_for_bundle():
         ffmpeg_temp = Path("temp_ffmpeg")
         ffmpeg_temp.mkdir(exist_ok=True)
 
-        # Download ffmpeg
+        # Try a smaller, more reliable ffmpeg download
         import urllib.request
-        ffmpeg_url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
-        zip_path = ffmpeg_temp / "ffmpeg.zip"
+        import urllib.error
 
-        print("   Downloading ffmpeg...")
-        urllib.request.urlretrieve(ffmpeg_url, zip_path)
+        # Use a direct link to a smaller ffmpeg binary
+        ffmpeg_urls = [
+            "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
+            "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+        ]
 
-        # Extract
-        print("   Extracting ffmpeg...")
-        import zipfile
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(ffmpeg_temp)
+        for ffmpeg_url in ffmpeg_urls:
+            try:
+                zip_path = ffmpeg_temp / "ffmpeg.zip"
+                print(f"   Trying download from: {ffmpeg_url}")
 
-        # Find ffmpeg.exe
-        for item in ffmpeg_temp.rglob("ffmpeg.exe"):
-            print(f"   Found ffmpeg: {item}")
-            return str(item)
+                # Add headers to avoid blocking
+                req = urllib.request.Request(ffmpeg_url)
+                req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
 
+                with urllib.request.urlopen(req, timeout=60) as response:
+                    with open(zip_path, 'wb') as f:
+                        f.write(response.read())
+
+                print("   Download successful, extracting...")
+
+                # Extract
+                import zipfile
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(ffmpeg_temp)
+
+                # Find ffmpeg.exe
+                for item in ffmpeg_temp.rglob("ffmpeg.exe"):
+                    print(f"   ✅ Found ffmpeg: {item}")
+                    return str(item)
+
+            except (urllib.error.URLError, urllib.error.HTTPError, Exception) as e:
+                print(f"   Failed: {e}")
+                continue
+
+        print("   ⚠️  All download attempts failed")
         return None
 
     except Exception as e:
@@ -110,8 +131,14 @@ def build_executable(app_name="TikTok-Live-Watcher"):
 
     # Add ffmpeg to bundle if available
     if ffmpeg_path and os.path.exists(ffmpeg_path):
-        cmd.extend(["--add-binary", f"{ffmpeg_path}:ffmpeg"])
+        if platform.system() == "Windows":
+            cmd.extend(["--add-binary", f"{ffmpeg_path};."])
+        else:
+            cmd.extend(["--add-binary", f"{ffmpeg_path}:."])
         print(f"✅ Including ffmpeg in bundle: {ffmpeg_path}")
+    else:
+        print("❌ CRITICAL: ffmpeg not found - build will fail!")
+        return False
 
     # Activate virtual environment and run PyInstaller
     venv_python = "venv/bin/python" if platform.system() != "Windows" else "venv\\Scripts\\python.exe"

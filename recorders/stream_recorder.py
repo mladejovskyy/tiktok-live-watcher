@@ -29,9 +29,17 @@ class StreamRecorder:
         # Check if running as PyInstaller bundle with bundled ffmpeg
         if getattr(sys, 'frozen', False):
             bundle_dir = os.path.dirname(sys.executable)
-            bundled_ffmpeg = os.path.join(bundle_dir, "ffmpeg", "ffmpeg.exe")
-            if os.path.exists(bundled_ffmpeg):
-                return bundled_ffmpeg
+
+            # Try different possible locations for bundled ffmpeg
+            possible_paths = [
+                os.path.join(bundle_dir, "ffmpeg.exe"),  # Direct in bundle dir
+                os.path.join(bundle_dir, "ffmpeg", "ffmpeg.exe"),  # In ffmpeg subfolder
+                os.path.join(bundle_dir, "_internal", "ffmpeg.exe"),  # PyInstaller internal
+            ]
+
+            for ffmpeg_path in possible_paths:
+                if os.path.exists(ffmpeg_path):
+                    return ffmpeg_path
 
         # Check system PATH
         try:

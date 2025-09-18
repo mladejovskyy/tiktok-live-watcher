@@ -16,8 +16,6 @@ jobs:
             platform: Windows
           - os: macos-latest
             platform: macOS
-          - os: ubuntu-latest
-            platform: Linux
 
     steps:
     - uses: actions/checkout@v4
@@ -82,19 +80,17 @@ jobs:
         files: |
           ./artifacts/TikTok-Live-Watcher-Windows/TikTok-Live-Watcher-Windows.zip
           ./artifacts/TikTok-Live-Watcher-macOS/TikTok-Live-Watcher-macOS.zip
-          ./artifacts/TikTok-Live-Watcher-Linux/TikTok-Live-Watcher-Linux.zip
         body: |
           ## TikTok Live Watcher Release
 
           ### Downloads
           - **Windows**: TikTok-Live-Watcher-Windows.zip
           - **macOS**: TikTok-Live-Watcher-macOS.zip
-          - **Linux**: TikTok-Live-Watcher-Linux.zip
 
           ### Installation
           1. Download the zip file for your platform
           2. Extract the zip file
-          3. Run the setup script (setup.bat on Windows, setup.sh on macOS/Linux)
+          3. Run the setup script (setup.bat on Windows, setup.sh on macOS)
           4. Run the TikTok Live Watcher executable
 
           ### Requirements
