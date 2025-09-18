@@ -35,7 +35,7 @@ def get_user_choice(max_choice: int) -> int:
             print(f"Please enter a number between 0 and {max_choice}")
         except ValueError:
             print("Please enter a valid number")
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
             return 0
 
@@ -61,7 +61,7 @@ def add_username_flow(username_manager: UsernameManager) -> None:
                 return
             else:
                 print(f"Username '{username}' already exists or is invalid")
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             print("\nCancelled")
             return
 
@@ -91,7 +91,7 @@ def remove_username_flow(username_manager: UsernameManager) -> None:
                     return
             else:
                 print("Invalid choice")
-        except (ValueError, KeyboardInterrupt):
+        except (ValueError, KeyboardInterrupt, EOFError):
             print("Cancelled")
             return
 
@@ -122,7 +122,7 @@ def select_username_flow(username_manager: UsernameManager) -> Optional[str]:
                 return usernames[choice - 2]
             else:
                 print("Invalid choice")
-        except (ValueError, KeyboardInterrupt):
+        except (ValueError, KeyboardInterrupt, EOFError):
             print("Cancelled")
             return None
 
@@ -134,7 +134,7 @@ def toggle_recording_flow(settings_manager: SettingsManager) -> None:
     print(f"Recording {status}")
 
 
-def check_dependencies_flow() -> None:
+def check_dependencies_flow(interactive: bool = True) -> None:
     """Check and display dependency status."""
     print("\n🔍 Checking Dependencies")
     print("=" * 25)
@@ -175,4 +175,8 @@ def check_dependencies_flow() -> None:
         print("⚠️  Recording will NOT work - streamlink is missing")
         print("   Run setup.bat again or install manually")
 
-    input("\nPress Enter to continue...")
+    if interactive:
+        try:
+            input("\nPress Enter to continue...")
+        except (EOFError, KeyboardInterrupt):
+            pass
