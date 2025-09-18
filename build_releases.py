@@ -34,6 +34,40 @@ def run_command(cmd, cwd=None):
         print(f"❌ Exception running {cmd}: {e}")
         return False
 
+def prepare_ffmpeg_for_bundle():
+    """Download ffmpeg for bundling with the executable"""
+    try:
+        print("📥 Preparing ffmpeg for bundling...")
+
+        # Create temp directory for ffmpeg
+        ffmpeg_temp = Path("temp_ffmpeg")
+        ffmpeg_temp.mkdir(exist_ok=True)
+
+        # Download ffmpeg
+        import urllib.request
+        ffmpeg_url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+        zip_path = ffmpeg_temp / "ffmpeg.zip"
+
+        print("   Downloading ffmpeg...")
+        urllib.request.urlretrieve(ffmpeg_url, zip_path)
+
+        # Extract
+        print("   Extracting ffmpeg...")
+        import zipfile
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(ffmpeg_temp)
+
+        # Find ffmpeg.exe
+        for item in ffmpeg_temp.rglob("ffmpeg.exe"):
+            print(f"   Found ffmpeg: {item}")
+            return str(item)
+
+        return None
+
+    except Exception as e:
+        print(f"⚠️  Could not prepare ffmpeg: {e}")
+        return None
+
 def clean_build_artifacts():
     """Clean previous build artifacts"""
     print("🧹 Cleaning previous builds...")
@@ -56,6 +90,9 @@ def build_executable(app_name="TikTok-Live-Watcher"):
     """Build the executable using PyInstaller"""
     print(f"🔨 Building {app_name} executable...")
 
+    # Download and prepare ffmpeg
+    ffmpeg_path = prepare_ffmpeg_for_bundle()
+
     # Build command for a single executable file
     cmd = [
         "pyinstaller",
@@ -70,6 +107,11 @@ def build_executable(app_name="TikTok-Live-Watcher"):
         "--console",
         "main.py"
     ]
+
+    # Add ffmpeg to bundle if available
+    if ffmpeg_path and os.path.exists(ffmpeg_path):
+        cmd.extend(["--add-binary", f"{ffmpeg_path}:ffmpeg"])
+        print(f"✅ Including ffmpeg in bundle: {ffmpeg_path}")
 
     # Activate virtual environment and run PyInstaller
     venv_python = "venv/bin/python" if platform.system() != "Windows" else "venv\\Scripts\\python.exe"
@@ -175,12 +217,9 @@ For help: https://github.com/mladejovskyy/tiktok-live-watcher/issues
 def create_windows_setup(package_dir):
     """Create Windows setup script"""
     setup_script = """@echo off
-setlocal enabledelayedexpansion
 echo ========================================
 echo TikTok Live Watcher - Windows Setup
 echo ========================================
-echo.
-echo Debug: Script started
 echo.
 
 echo Checking Python installation...

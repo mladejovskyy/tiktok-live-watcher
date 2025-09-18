@@ -24,6 +24,26 @@ class StreamRecorder:
         self.recordings_dir = os.path.join(app_dir, "Recordings")
         os.makedirs(self.recordings_dir, exist_ok=True)
 
+    def _get_ffmpeg_path(self) -> str:
+        """Get path to ffmpeg (bundled or system)."""
+        # Check if running as PyInstaller bundle with bundled ffmpeg
+        if getattr(sys, 'frozen', False):
+            bundle_dir = os.path.dirname(sys.executable)
+            bundled_ffmpeg = os.path.join(bundle_dir, "ffmpeg", "ffmpeg.exe")
+            if os.path.exists(bundled_ffmpeg):
+                return bundled_ffmpeg
+
+        # Check system PATH
+        try:
+            import shutil
+            system_ffmpeg = shutil.which("ffmpeg")
+            if system_ffmpeg:
+                return system_ffmpeg
+        except:
+            pass
+
+        return None
+
     def check_dependencies(self) -> tuple[bool, bool, bool]:
         """Check if streamlink, yt-dlp, and ffmpeg are available."""
         streamlink_available = False
@@ -44,12 +64,15 @@ class StreamRecorder:
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
 
-        try:
-            subprocess.run(['ffmpeg', '-version'],
-                         capture_output=True, check=True)
-            ffmpeg_available = True
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
+        # Check for ffmpeg (bundled or system)
+        ffmpeg_cmd = self._get_ffmpeg_path()
+        if ffmpeg_cmd:
+            try:
+                subprocess.run([ffmpeg_cmd, '-version'],
+                             capture_output=True, check=True)
+                ffmpeg_available = True
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
 
         return streamlink_available, ytdlp_available, ffmpeg_available
 
@@ -204,8 +227,13 @@ class StreamRecorder:
     def _fix_recorded_files(self) -> None:
         """Fix metadata and seekability of recorded files using ffmpeg if available."""
         try:
-            # Check if ffmpeg is available
-            subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+            # Get ffmpeg path (bundled or system)
+            ffmpeg_cmd = self._get_ffmpeg_path()
+            if not ffmpeg_cmd:
+                return
+
+            # Test ffmpeg
+            subprocess.run([ffmpeg_cmd, '-version'], capture_output=True, check=True)
 
             # Find the most recent .mp4 file in recordings directory
             mp4_files = glob.glob(os.path.join(self.recordings_dir, "*.mp4"))
@@ -223,7 +251,7 @@ class StreamRecorder:
 
             # Use ffmpeg to fix the file
             cmd = [
-                'ffmpeg', '-i', latest_file,
+                ffmpeg_cmd, '-i', latest_file,
                 '-c', 'copy',  # Don't re-encode, just copy streams
                 '-movflags', '+faststart',  # Move metadata to beginning
                 '-avoid_negative_ts', 'make_zero',  # Fix timestamp issues
