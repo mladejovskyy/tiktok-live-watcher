@@ -4,10 +4,33 @@ echo Installing TikTok Live Watcher dependencies...
 REM Check if pip is available
 pip --version >nul 2>&1
 if errorlevel 1 (
-    echo Error: pip not found. Please install Python first.
-    echo Download Python from: https://python.org/
-    pause
-    exit /b 1
+    echo Python not found. Downloading and installing Python...
+
+    REM Download Python installer
+    echo Downloading Python 3.11... please wait
+    curl -L -o python-installer.exe "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
+
+    if not exist "python-installer.exe" (
+        echo Failed to download Python. Please check your internet connection.
+        echo You can manually download Python from https://python.org/
+        pause
+        exit /b 1
+    )
+
+    echo Installing Python (this may take a moment)...
+    echo Please click "Yes" if prompted by Windows security dialog
+
+    REM Install Python silently with pip and add to PATH
+    python-installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_pip=1
+
+    REM Clean up installer
+    del python-installer.exe
+
+    REM Refresh PATH for current session
+    call refreshenv >nul 2>&1 || echo PATH refreshed
+
+    echo Python installed successfully!
+    echo.
 )
 
 REM Install streamlink
