@@ -39,20 +39,20 @@ def download_ffmpeg_binary():
     if system == "darwin":  # macOS
         print("Downloading ffmpeg for macOS...")
         # You would download from https://ffmpeg.org/download.html#build-mac
-        print("⚠️  Please manually download ffmpeg for macOS and place in dist/binaries/")
+        print("Please manually download ffmpeg for macOS and place in dist/binaries/")
         print("   Download from: https://evermeet.cx/ffmpeg/")
         return False
 
     elif system == "windows":
         print("Downloading ffmpeg for Windows...")
         # You would download from https://ffmpeg.org/download.html#build-windows
-        print("⚠️  Please manually download ffmpeg for Windows and place in dist/binaries/")
+        print("Please manually download ffmpeg for Windows and place in dist/binaries/")
         return False
 
     elif system == "linux":
         print("Downloading ffmpeg for Linux...")
         # You would download static build
-        print("⚠️  Please manually download ffmpeg for Linux and place in dist/binaries/")
+        print("Please manually download ffmpeg for Linux and place in dist/binaries/")
         return False
 
     return False
@@ -117,11 +117,11 @@ exe = EXE(
     with open("TikTok-Live-Watcher.spec", "w") as f:
         f.write(spec_content.strip())
 
-    print("✅ Created custom spec file")
+    print("Created custom spec file")
 
 def build_executable():
     """Build the executable using PyInstaller"""
-    print("🔨 Building executable...")
+    print("Building executable...")
 
     # Clean previous builds
     if os.path.exists("build"):
@@ -133,12 +133,12 @@ def build_executable():
     if not run_command("pyinstaller TikTok-Live-Watcher.spec"):
         return False
 
-    print("✅ Executable built successfully")
+    print("Executable built successfully")
     return True
 
 def create_distribution_package():
     """Create a complete distribution package"""
-    print("📦 Creating distribution package...")
+    print("Creating distribution package...")
 
     # Create distribution directory
     dist_name = f"TikTok-Live-Watcher-{platform.system()}-{platform.machine()}"
@@ -212,16 +212,16 @@ pip install streamlink
 
 # Check for ffmpeg
 if ! command -v ffmpeg &> /dev/null; then
-    echo "⚠️  ffmpeg not found!"
+    echo "WARNING: ffmpeg not found!"
     echo "Please install ffmpeg:"
     echo "  macOS: brew install ffmpeg"
     echo "  Linux: sudo apt install ffmpeg"
     echo "  Windows: Download from https://ffmpeg.org/"
 else
-    echo "✅ ffmpeg is already installed"
+    echo "ffmpeg is already installed"
 fi
 
-echo "✅ Setup complete!"
+echo "Setup complete!"
 echo "You can now run the TikTok Live Watcher executable."
 """
 
@@ -264,40 +264,46 @@ pause
     with open(dist_dir / "install_dependencies.bat", "w") as f:
         f.write(install_bat)
 
-    print(f"✅ Distribution package created: {dist_dir}")
+    print(f"Distribution package created: {dist_dir}")
     return str(dist_dir)
 
 def main():
     """Main build process"""
-    print("🚀 Building TikTok Live Watcher Executable")
+    print("Building TikTok Live Watcher Executable")
     print("=" * 50)
 
     # Check if we're in virtual environment
     if not os.path.exists("venv"):
-        print("❌ Virtual environment not found!")
+        print("Virtual environment not found!")
         print("Please run from the project directory with venv/ present")
         return 1
 
     # Activate virtual environment and install pyinstaller
-    print("📦 Installing PyInstaller...")
-    if not run_command("source venv/bin/activate && pip install pyinstaller"):
-        print("❌ Failed to install PyInstaller")
-        return 1
+    print("Installing PyInstaller...")
+    # PyInstaller is already installed via requirements.txt
+    print("PyInstaller already installed")
 
     # Create spec file
     create_spec_file()
 
     # Build executable
-    if not run_command("source venv/bin/activate && pyinstaller TikTok-Live-Watcher.spec"):
-        print("❌ Failed to build executable")
+    # Use Windows-compatible activation
+    activation_cmd = "venv\\Scripts\\activate.bat && pyinstaller TikTok-Live-Watcher.spec"
+    if platform.system() == "Windows":
+        activation_cmd = "venv\\Scripts\\activate.bat && pyinstaller TikTok-Live-Watcher.spec"
+    else:
+        activation_cmd = "source venv/bin/activate && pyinstaller TikTok-Live-Watcher.spec"
+
+    if not run_command(activation_cmd):
+        print("Failed to build executable")
         return 1
 
     # Create distribution package
     dist_path = create_distribution_package()
 
-    print("\n🎉 BUILD COMPLETE!")
-    print(f"📁 Distribution package: {dist_path}")
-    print("\n📋 Next Steps:")
+    print("\nBUILD COMPLETE!")
+    print(f"Distribution package: {dist_path}")
+    print("\nNext Steps:")
     print("1. Share the entire distribution folder with users")
     print("2. Users should run install_dependencies script first")
     print("3. Then they can run the executable")
